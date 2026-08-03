@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+build/
+dist/
+.env
+.env.local
+.DS_Store
+*.log
+server/db.sqlite
+client/node_modules/
+server/node_modules/
+client/.next/
+client/out/
+server/.env
+client/.env
