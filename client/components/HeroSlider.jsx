@@ -181,10 +181,10 @@ export default function HeroSlider({ slides = [] }) {
           <img 
             src={currentSlide.bgImage || currentSlide.image} 
             alt="Service Background" 
-            className="w-full h-full object-cover opacity-40" 
+            className="w-full h-full object-cover" 
           />
-          {/* Gradient to perfectly fade to black. Text is now on the right, so black is darker on the right. */}
-          <div className="absolute inset-0 bg-gradient-to-l from-black via-black/80 to-black/40" />
+          {/* Uniform black opacity overlay to showcase the service image beautifully behind the text */}
+          <div className="absolute inset-0 bg-black/75" />
         </motion.div>
       </AnimatePresence>
 
