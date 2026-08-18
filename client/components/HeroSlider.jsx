@@ -1,67 +1,49 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ArrowRight, Sparkles, CheckCircle2 } from 'lucide-react';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, LayoutGroup } from 'framer-motion';
+import { ChevronLeft, ChevronRight, ArrowRight, Sparkles, CheckCircle2, X, Send, PhoneCall } from 'lucide-react';
 
 const sliderVariants = {
-  enter: (direction) => {
-    return {
-      x: direction > 0 ? 1000 : -1000,
-      opacity: 0,
-      scale: 0.9,
-    };
-  },
+  enter: (direction) => ({
+    x: direction > 0 ? 800 : -800,
+    opacity: 0,
+    scale: 0.8,
+    rotateY: direction > 0 ? 45 : -45,
+  }),
   center: {
     zIndex: 1,
     x: 0,
     opacity: 1,
     scale: 1,
+    rotateY: 0,
     transition: {
-      x: { type: 'spring', stiffness: 300, damping: 30 },
+      x: { type: 'spring', stiffness: 200, damping: 25 },
       opacity: { duration: 0.5 },
-      scale: { duration: 0.5 },
-    },
-  },
-  exit: (direction) => {
-    return {
-      zIndex: 0,
-      x: direction < 0 ? 1000 : -1000,
-      opacity: 0,
-      scale: 0.9,
-      transition: {
-        x: { type: 'spring', stiffness: 300, damping: 30 },
-        opacity: { duration: 0.5 },
-        scale: { duration: 0.5 },
-      },
-    };
-  },
-};
-
-const textVariants = {
-  hidden: (direction) => ({
-    opacity: 0,
-    y: 40,
-    x: direction > 0 ? 40 : -40,
-  }),
-  visible: {
-    opacity: 1,
-    y: 0,
-    x: 0,
-    transition: {
-      type: 'spring',
-      stiffness: 300,
-      damping: 24,
-      staggerChildren: 0.1,
-      delayChildren: 0.2,
+      rotateY: { duration: 0.6, ease: "easeOut" }
     },
   },
   exit: (direction) => ({
+    zIndex: 0,
+    x: direction < 0 ? 800 : -800,
     opacity: 0,
-    y: -40,
-    x: direction < 0 ? 40 : -40,
-    transition: { duration: 0.3 },
+    scale: 0.8,
+    rotateY: direction < 0 ? 45 : -45,
+    transition: {
+      x: { type: 'spring', stiffness: 200, damping: 25 },
+      opacity: { duration: 0.5 },
+      rotateY: { duration: 0.6 }
+    },
   }),
+};
+
+const textVariants = {
+  hidden: (direction) => ({ opacity: 0, y: 40, x: direction > 0 ? 40 : -40 }),
+  visible: { 
+    opacity: 1, y: 0, x: 0, 
+    transition: { type: 'spring', stiffness: 300, damping: 24, staggerChildren: 0.1, delayChildren: 0.2 }
+  },
+  exit: (direction) => ({ opacity: 0, y: -40, x: direction < 0 ? 40 : -40, transition: { duration: 0.3 } }),
 };
 
 const childVariants = {
@@ -72,14 +54,32 @@ const childVariants = {
 export default function HeroSlider({ slides = [] }) {
   const [[page, direction], setPage] = useState([0, 0]);
   const [isPaused, setIsPaused] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [leadStatus, setLeadStatus] = useState('idle'); // idle | submitting | success
   const touchStartX = useRef(0);
+
+  // Mouse tracking for Spotlight & 3D Tilt
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const spotlightX = useMotionValue(0);
+  const spotlightY = useMotionValue(0);
+
+  const springConfig = { damping: 25, stiffness: 200 };
+  const smoothMouseX = useSpring(mouseX, springConfig);
+  const smoothMouseY = useSpring(mouseY, springConfig);
+
+  // Parallax transforms based on mouse position
+  const rotateX = useTransform(smoothMouseY, [-0.5, 0.5], [15, -15]);
+  const rotateY = useTransform(smoothMouseX, [-0.5, 0.5], [-15, 15]);
+  const translateX = useTransform(smoothMouseX, [-0.5, 0.5], [-20, 20]);
+  const translateY = useTransform(smoothMouseY, [-0.5, 0.5], [-20, 20]);
 
   const activeSlides = slides && slides.length > 0 ? slides : [
     {
       id: 1,
       image: 'https://images.unsplash.com/photo-1562654501-a0ccc0fc3fb1?auto=format&fit=crop&w=1200&q=80',
       headline: 'High-Quality Flex Banners for Every Occasion',
-      subtext: 'Get ultra-vibrant, weather-durable banner printing tailored for outdoor campaigns, corporate events & exhibitions with 24-hour delivery.',
+      subtext: 'Get ultra-vibrant, weather-durable banner printing tailored for outdoor campaigns & corporate events.',
       btnText: 'Explore Flex Printing',
       btnLink: '/services/banner-flex-printing'
     },
@@ -87,7 +87,7 @@ export default function HeroSlider({ slides = [] }) {
       id: 2,
       image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80',
       headline: 'Illuminate Your Brand with Custom LED Boards',
-      subtext: 'Command attention day & night with energy-efficient 3D backlit LED glow signboards built for modern retail storefronts.',
+      subtext: 'Command attention day & night with energy-efficient 3D backlit LED glow signboards built for modern storefronts.',
       btnText: 'View LED Signage',
       btnLink: '/services/led-board-creation'
     },
@@ -95,33 +95,66 @@ export default function HeroSlider({ slides = [] }) {
       id: 3,
       image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80',
       headline: 'Premium 3D Acrylic & Laser Cut Signage',
-      subtext: 'Elevate your office reception and storefront frontage with high-precision laser-machined 3D acrylic lettering.',
+      subtext: 'Elevate your office reception with high-precision laser-machined 3D acrylic lettering.',
       btnText: 'Discover Acrylic Signs',
       btnLink: '/services/acrylic-letter-signage'
     }
   ];
 
   const currentIndex = Math.abs(page % activeSlides.length);
+  const currentSlide = activeSlides[currentIndex];
 
   const paginate = (newDirection) => {
     setPage([page + newDirection, newDirection]);
   };
 
   useEffect(() => {
-    if (isPaused || activeSlides.length <= 1) return;
+    // Stop slider if paused or if the user is filling out the morph form
+    if (isPaused || isFormOpen || activeSlides.length <= 1) return;
     const timer = setInterval(() => {
       paginate(1);
-    }, 2000); // 2 seconds per slide
+    }, 4000); // 4 seconds
     return () => clearInterval(timer);
-  }, [isPaused, activeSlides.length, page]);
+  }, [isPaused, isFormOpen, activeSlides.length, page]);
 
-  const currentSlide = activeSlides[currentIndex];
+  const handleMouseMove = (e) => {
+    const { clientX, clientY, currentTarget } = e;
+    const { left, top, width, height } = currentTarget.getBoundingClientRect();
+    
+    const x = (clientX - left) / width - 0.5;
+    const y = (clientY - top) / height - 0.5;
+    
+    mouseX.set(x);
+    mouseY.set(y);
+    
+    // Spotlight raw pixel coords relative to container
+    spotlightX.set(clientX - left);
+    spotlightY.set(clientY - top);
+  };
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    setLeadStatus('submitting');
+    setTimeout(() => {
+      setLeadStatus('success');
+      setTimeout(() => {
+        setIsFormOpen(false);
+        setLeadStatus('idle');
+      }, 2500);
+    }, 1000);
+  };
 
   return (
     <section
-      className="relative min-h-[95vh] bg-slate-900 pt-28 pb-16 lg:pt-36 lg:pb-24 flex items-center overflow-hidden"
+      className="relative min-h-[95vh] bg-[#020617] pt-28 pb-16 lg:pt-36 lg:pb-24 flex items-center overflow-hidden"
+      onMouseMove={handleMouseMove}
       onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
+      onMouseLeave={() => {
+        setIsPaused(false);
+        // Reset 3D tilt on leave
+        mouseX.set(0);
+        mouseY.set(0);
+      }}
       onTouchStart={(e) => (touchStartX.current = e.touches[0].clientX)}
       onTouchEnd={(e) => {
         const diff = touchStartX.current - e.changedTouches[0].clientX;
@@ -129,101 +162,127 @@ export default function HeroSlider({ slides = [] }) {
         if (diff < -50) paginate(-1);
       }}
     >
-      {/* Dynamic Background Image Overlay for Immersion */}
+      {/* 1. THE SPOTLIGHT GLOW REVEAL (Night & Day Concept) */}
+      <motion.div
+        className="absolute inset-0 pointer-events-none z-0"
+        style={{
+          background: useTransform(
+            [spotlightX, spotlightY],
+            ([x, y]) => `radial-gradient(800px circle at ${x}px ${y}px, rgba(249, 115, 22, 0.15), transparent 60%)`
+          )
+        }}
+      />
+
       <AnimatePresence initial={false} custom={direction}>
         <motion.div
           key={page}
           custom={direction}
           initial={{ opacity: 0, scale: 1.1 }}
-          animate={{ opacity: 0.15, scale: 1 }}
+          animate={{ opacity: 0.1, scale: 1 }}
           exit={{ opacity: 0, scale: 1.05 }}
           transition={{ duration: 1.2, ease: "easeInOut" }}
           className="absolute inset-0 z-0 pointer-events-none"
         >
-          <img
-            src={currentSlide.image}
-            alt="Background blur"
-            className="w-full h-full object-cover filter blur-2xl"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-transparent" />
+          <img src={currentSlide.image} alt="Background blur" className="w-full h-full object-cover filter blur-3xl saturate-200" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#020617] via-[#020617]/90 to-[#020617]/40" />
         </motion.div>
       </AnimatePresence>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10 perspective-[1000px]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center min-h-[500px]">
           
-          {/* LEFT DIV: Headline, Subtext, CTAs */}
-          <div className="order-2 lg:order-1 flex flex-col justify-center space-y-6 lg:pr-8 min-h-[300px]">
-            <AnimatePresence initial={false} custom={direction} mode="wait">
-              <motion.div
-                key={page}
-                custom={direction}
-                variants={textVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                className="flex flex-col space-y-6"
-              >
-                <motion.div variants={childVariants} className="inline-flex items-center space-x-2 bg-brand-500/10 border border-brand-500/30 px-4 py-2 rounded-full text-brand-500 text-xs font-bold w-fit backdrop-blur-md">
-                  <Sparkles className="w-4 h-4 animate-pulse" />
-                  <span className="tracking-wide uppercase">Premium Print Solution</span>
-                </motion.div>
-
-                <motion.h1 
-                  variants={childVariants}
-                  className="text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tight"
+          {/* LEFT DIV: Text & CTA Morph */}
+          <div className="order-2 lg:order-1 flex flex-col justify-center space-y-6 lg:pr-8">
+            <LayoutGroup>
+              <AnimatePresence initial={false} custom={direction} mode="wait">
+                <motion.div
+                  key={`text-${page}`}
+                  custom={direction}
+                  variants={textVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  className="flex flex-col space-y-6"
                 >
-                  {currentSlide.headline}
-                </motion.h1>
+                  <motion.div variants={childVariants} className="inline-flex items-center space-x-2 bg-brand-500/10 border border-brand-500/30 px-4 py-2 rounded-full text-brand-400 text-xs font-bold w-fit backdrop-blur-md shadow-[0_0_15px_rgba(234,88,12,0.2)]">
+                    <Sparkles className="w-4 h-4 animate-pulse text-brand-500" />
+                    <span className="tracking-widest uppercase">Premium Signage Masters</span>
+                  </motion.div>
 
-                <motion.p 
-                  variants={childVariants}
-                  className="text-lg sm:text-xl text-slate-300 font-medium leading-relaxed max-w-xl"
-                >
-                  {currentSlide.subtext}
-                </motion.p>
+                  <motion.h1 variants={childVariants} className="text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tight">
+                    {currentSlide.headline}
+                  </motion.h1>
 
-                <motion.div variants={childVariants} className="pt-4 flex flex-wrap items-center gap-5">
-                  <Link
-                    href={currentSlide.btnLink || '/services'}
-                    className="group relative inline-flex items-center justify-center overflow-hidden rounded-full bg-brand-600 px-8 py-4 font-bold text-white shadow-xl shadow-brand-500/30 transition-transform hover:scale-105 active:scale-95"
-                  >
-                    <span className="absolute inset-0 h-full w-full bg-gradient-to-tr from-brand-700 to-brand-500 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                    <span className="relative flex items-center space-x-2">
-                      <span>{currentSlide.btnText || 'Explore Services'}</span>
-                      <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
-                    </span>
-                  </Link>
+                  <motion.p variants={childVariants} className="text-lg sm:text-xl text-slate-400 font-medium leading-relaxed max-w-xl">
+                    {currentSlide.subtext}
+                  </motion.p>
 
-                  <Link
-                    href="/contact"
-                    className="inline-flex items-center space-x-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold px-8 py-4 rounded-full backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95"
-                  >
-                    <span>Get Custom Quote</span>
-                  </Link>
+                  <motion.div variants={childVariants} className="pt-4 flex flex-wrap items-center gap-5 relative h-16 w-full">
+                    
+                    {/* 3. ZERO-FRICTION MORPHING LEAD FORM */}
+                    <AnimatePresence>
+                      {!isFormOpen ? (
+                        <motion.button
+                          layoutId="morph-cta"
+                          onClick={() => setIsFormOpen(true)}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          className="absolute left-0 top-0 inline-flex items-center justify-center space-x-3 bg-gradient-to-r from-brand-600 to-brand-500 text-white font-bold px-8 py-4 rounded-full shadow-[0_0_40px_rgba(234,88,12,0.3)] border border-brand-400/50 overflow-hidden group"
+                        >
+                          <span className="absolute inset-0 w-full h-full bg-gradient-to-tr from-brand-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <span className="relative">Get Your Free 3D Design Mockup</span>
+                          <ArrowRight className="w-5 h-5 relative group-hover:translate-x-1 transition-transform" />
+                        </motion.button>
+                      ) : (
+                        <motion.div
+                          layoutId="morph-cta"
+                          className="absolute left-0 top-0 w-full sm:w-[450px] bg-slate-900 border border-brand-500/50 rounded-3xl p-6 shadow-2xl shadow-brand-500/20 z-50 overflow-hidden"
+                        >
+                          <button onClick={() => setIsFormOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-800 p-1.5 rounded-full">
+                            <X className="w-4 h-4" />
+                          </button>
+                          
+                          {leadStatus === 'success' ? (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-6 space-y-4 text-center">
+                              <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mb-2">
+                                <CheckCircle2 className="w-8 h-8" />
+                              </div>
+                              <h3 className="text-xl font-bold text-white">Inquiry Received!</h3>
+                              <p className="text-slate-400 text-sm">Our design team will contact you within 15 minutes.</p>
+                            </motion.div>
+                          ) : (
+                            <form onSubmit={handleFormSubmit} className="space-y-4">
+                              <div>
+                                <h3 className="text-lg font-bold text-white flex items-center space-x-2">
+                                  <Sparkles className="w-5 h-5 text-brand-500" />
+                                  <span>Instant Quote & Mockup</span>
+                                </h3>
+                                <p className="text-slate-400 text-xs mt-1">Lock in the best factory rates today.</p>
+                              </div>
+                              <div className="space-y-3 pt-2">
+                                <input type="text" required placeholder="Your Name" className="w-full bg-slate-950 border border-slate-800 focus:border-brand-500 rounded-xl px-4 py-3 text-white text-sm outline-none transition-colors" />
+                                <input type="tel" required placeholder="Phone Number" className="w-full bg-slate-950 border border-slate-800 focus:border-brand-500 rounded-xl px-4 py-3 text-white text-sm outline-none transition-colors" />
+                              </div>
+                              <button type="submit" disabled={leadStatus === 'submitting'} className="w-full bg-brand-500 hover:bg-brand-400 text-white font-bold py-3.5 rounded-xl shadow-[0_0_20px_rgba(234,88,12,0.4)] flex items-center justify-center space-x-2 transition-all mt-2">
+                                {leadStatus === 'submitting' ? (
+                                  <span className="animate-pulse">Processing...</span>
+                                ) : (
+                                  <><span>Claim My Free Mockup</span><Send className="w-4 h-4" /></>
+                                )}
+                              </button>
+                            </form>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
                 </motion.div>
-                
-                <motion.div variants={childVariants} className="flex items-center space-x-4 pt-6">
-                   <div className="flex -space-x-3">
-                     {[1,2,3,4].map((i) => (
-                       <div key={i} className={`w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-300 flex items-center justify-center overflow-hidden z-[${4-i}]`}>
-                         <img src={`https://i.pravatar.cc/100?img=${i+10}`} alt="Client" className="w-full h-full object-cover"/>
-                       </div>
-                     ))}
-                   </div>
-                   <div className="flex flex-col">
-                     <div className="flex items-center space-x-1 text-yellow-400">
-                       {[...Array(5)].map((_,i) => <svg key={i} className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>)}
-                     </div>
-                     <span className="text-xs text-slate-400 font-medium mt-0.5">Trusted by 2500+ Clients</span>
-                   </div>
-                </motion.div>
-              </motion.div>
-            </AnimatePresence>
+              </AnimatePresence>
+            </LayoutGroup>
           </div>
 
-          {/* RIGHT DIV: Product/Project Image */}
-          <div className="order-1 lg:order-2 relative group flex justify-center lg:justify-end items-center h-[350px] sm:h-[450px] lg:h-[600px] w-full">
+          {/* RIGHT DIV: 2. FLOATING 3D PARALLAX IMAGE */}
+          <div className="order-1 lg:order-2 relative group flex justify-center lg:justify-end items-center h-[350px] sm:h-[450px] lg:h-[600px] w-full transform-gpu">
             <AnimatePresence initial={false} custom={direction}>
               <motion.div
                 key={page}
@@ -233,27 +292,31 @@ export default function HeroSlider({ slides = [] }) {
                 animate="center"
                 exit="exit"
                 className="absolute inset-0 flex justify-center items-center"
+                style={{ rotateX, rotateY, x: translateX, y: translateY }} // Apply 3D mouse parallax
               >
-                <div className="relative w-full max-w-[600px] aspect-[4/3] rounded-[2rem] overflow-hidden border border-slate-700/50 shadow-2xl shadow-brand-500/20 transform rotate-1 hover:rotate-0 transition-transform duration-500">
+                {/* Main floating card */}
+                <div className="relative w-full max-w-[550px] aspect-[4/3] rounded-[2.5rem] overflow-hidden border border-slate-700/50 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.8)] shadow-brand-500/10">
                   <motion.img
                     src={currentSlide.image}
                     alt={currentSlide.headline}
                     className="w-full h-full object-cover"
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.6 }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent" />
+                  {/* Internal Glow Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-tr from-brand-500/20 via-transparent to-white/10 mix-blend-overlay pointer-events-none" />
                   
-                  {/* Floating Badge inside Image */}
-                  <div className="absolute bottom-6 right-6 bg-slate-900/80 backdrop-blur-md border border-slate-700 p-3 rounded-2xl flex items-center space-x-3 shadow-2xl">
-                     <div className="bg-brand-500 p-2 rounded-xl">
-                        <CheckCircle2 className="w-6 h-6 text-white" />
+                  {/* Floating Elements (Parallax layers) */}
+                  <motion.div 
+                    className="absolute -bottom-6 -left-6 bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 p-4 rounded-3xl flex flex-col shadow-2xl"
+                    style={{ x: useTransform(smoothMouseX, [-0.5, 0.5], [20, -20]), y: useTransform(smoothMouseY, [-0.5, 0.5], [20, -20]) }}
+                  >
+                     <div className="flex items-center space-x-3 mb-2">
+                       <div className="bg-emerald-500/20 p-2 rounded-xl border border-emerald-500/30">
+                          <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                       </div>
+                       <span className="text-white font-bold text-sm">24-Hour Print</span>
                      </div>
-                    <div className="flex flex-col pr-2">
-                       <span className="text-white font-bold text-sm">#1 Experts</span>
-                       <span className="text-slate-400 text-xs font-medium">In Printing & Signage</span>
-                    </div>
-                  </div>
+                     <span className="text-slate-400 text-xs font-medium pl-1">Express Delivery Available</span>
+                  </motion.div>
                 </div>
               </motion.div>
             </AnimatePresence>
@@ -261,12 +324,9 @@ export default function HeroSlider({ slides = [] }) {
 
         </div>
 
-        {/* Custom Progress & Controls at Bottom */}
-        <div className="mt-16 lg:mt-10 flex flex-col sm:flex-row items-center justify-between border-t border-slate-800 pt-6 gap-6">
+        {/* Custom Progress & Controls */}
+        <div className="mt-20 lg:mt-6 flex flex-col sm:flex-row items-center justify-between border-t border-slate-800/60 pt-6 gap-6 relative z-0">
           <div className="flex items-center space-x-4">
-            <div className="text-slate-400 font-mono text-sm font-bold tracking-widest">
-              0{currentIndex + 1}
-            </div>
             <div className="flex space-x-2">
               {activeSlides.map((_, idx) => (
                 <button
@@ -276,35 +336,24 @@ export default function HeroSlider({ slides = [] }) {
                      setPage([page + (idx - currentIndex), newDirection]);
                   }}
                   aria-label={`Go to slide ${idx + 1}`}
-                  className="group relative h-2 flex items-center"
+                  className="group relative h-2 flex items-center px-1"
                 >
                   <div className={`h-1.5 rounded-full transition-all duration-500 ease-out ${
                     currentIndex === idx
-                      ? 'w-12 bg-brand-500 shadow-[0_0_12px_rgba(249,115,22,0.8)]'
-                      : 'w-4 bg-slate-700 group-hover:bg-slate-500 group-hover:w-6'
+                      ? 'w-16 bg-brand-500 shadow-[0_0_15px_rgba(249,115,22,0.8)]'
+                      : 'w-6 bg-slate-800 group-hover:bg-slate-600'
                   }`} />
                 </button>
               ))}
             </div>
-            <div className="text-slate-600 font-mono text-sm font-bold tracking-widest">
-              0{activeSlides.length}
-            </div>
           </div>
 
           <div className="flex items-center space-x-3">
-            <button
-              onClick={() => paginate(-1)}
-              aria-label="Previous Slide"
-              className="p-4 rounded-full bg-slate-800/50 border border-slate-700 text-slate-300 hover:text-white hover:border-brand-500 hover:bg-slate-800 backdrop-blur-sm transition-all duration-300 hover:scale-110 active:scale-95 group"
-            >
-              <ChevronLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
+            <button onClick={() => paginate(-1)} className="p-4 rounded-full bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-brand-500 transition-all duration-300 hover:scale-110">
+              <ChevronLeft className="w-5 h-5" />
             </button>
-            <button
-              onClick={() => paginate(1)}
-              aria-label="Next Slide"
-              className="p-4 rounded-full bg-slate-800/50 border border-slate-700 text-slate-300 hover:text-white hover:border-brand-500 hover:bg-slate-800 backdrop-blur-sm transition-all duration-300 hover:scale-110 active:scale-95 group"
-            >
-              <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+            <button onClick={() => paginate(1)} className="p-4 rounded-full bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-brand-500 transition-all duration-300 hover:scale-110">
+              <ChevronRight className="w-5 h-5" />
             </button>
           </div>
         </div>
