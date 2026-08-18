@@ -172,7 +172,7 @@ export default function HeroSlider({ slides = [] }) {
           key={page}
           custom={direction}
           initial={{ opacity: 0, scale: 1.05 }}
-          animate={{ opacity: 0.35, scale: 1 }}
+          animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 1.05 }}
           transition={{ duration: 1.2, ease: "easeInOut" }}
           className="absolute inset-0 z-0 pointer-events-none"
@@ -181,10 +181,10 @@ export default function HeroSlider({ slides = [] }) {
           <img 
             src={currentSlide.bgImage || currentSlide.image} 
             alt="Service Background" 
-            className="w-full h-full object-cover" 
+            className="w-full h-full object-cover opacity-40" 
           />
-          {/* Gradient to ensure text readability */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent" />
+          {/* Gradient to perfectly fade to black. Text is now on the right, so black is darker on the right. */}
+          <div className="absolute inset-0 bg-gradient-to-l from-black via-black/80 to-black/40" />
         </motion.div>
       </AnimatePresence>
 
@@ -202,8 +202,8 @@ export default function HeroSlider({ slides = [] }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10 perspective-[1000px]">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center min-h-[500px]">
           
-          {/* LEFT DIV: Text & CTA Morph */}
-          <div className="order-2 lg:order-1 flex flex-col justify-center space-y-6 lg:pr-8">
+          {/* RIGHT DIV (now order-2): Text & CTA Morph */}
+          <div className="order-2 lg:order-2 flex flex-col justify-center space-y-6 lg:pl-8">
             <LayoutGroup>
               <AnimatePresence initial={false} custom={direction} mode="wait">
                 <motion.div
@@ -292,8 +292,8 @@ export default function HeroSlider({ slides = [] }) {
             </LayoutGroup>
           </div>
 
-          {/* RIGHT DIV: FLOATING 3D PARALLAX PROJECT IMAGE */}
-          <div className="order-1 lg:order-2 relative group flex justify-center lg:justify-end items-center h-[350px] sm:h-[450px] lg:h-[600px] w-full transform-gpu">
+          {/* LEFT DIV (now order-1): FLOATING 3D PARALLAX PROJECT IMAGE */}
+          <div className="order-1 lg:order-1 relative group flex justify-center lg:justify-start items-center h-[350px] sm:h-[450px] lg:h-[600px] w-full transform-gpu">
             <AnimatePresence initial={false} custom={direction}>
               <motion.div
                 key={page}
