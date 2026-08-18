@@ -93,6 +93,7 @@ export const fallbackSlides = [
   {
     id: 1,
     image: 'https://images.unsplash.com/photo-1562654501-a0ccc0fc3fb1?auto=format&fit=crop&w=1200&q=80',
+    bgImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=2000&q=80',
     headline: 'High-Quality Flex Banners for Every Occasion',
     subtext: 'Get ultra-vibrant, weather-durable banner printing tailored for outdoor campaigns and corporate events with fastest 24-hour turnaround.',
     btnText: 'View Banner Services',
@@ -103,6 +104,7 @@ export const fallbackSlides = [
   {
     id: 2,
     image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80',
+    bgImage: 'https://images.unsplash.com/photo-1596522354195-e84ae3c98731?auto=format&fit=crop&w=2000&q=80',
     headline: 'Illuminate Your Brand with Custom LED Boards',
     subtext: 'Command attention day & night with energy-efficient 3D backlit LED glow signboards built for modern storefronts.',
     btnText: 'Explore LED Signage',
@@ -113,6 +115,7 @@ export const fallbackSlides = [
   {
     id: 3,
     image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80',
+    bgImage: 'https://images.unsplash.com/photo-1596496050827-8299e0220de1?auto=format&fit=crop&w=2000&q=80',
     headline: 'Premium 3D Acrylic & Laser Cut Signage',
     subtext: 'Elevate your office reception and outdoor frontage with high-precision laser cut acrylic lettering.',
     btnText: 'Discover Acrylic Signs',
