@@ -10,7 +10,7 @@ const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
   // Pass all unhandled requests to Next.js
-  backendApp.all('*', (req, res) => {
+  backendApp.all('(.*)', (req, res) => {
     return handle(req, res);
   });
 
