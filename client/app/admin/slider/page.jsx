@@ -62,15 +62,50 @@ export default function AdminSliderPage() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editingSlide) {
-      setSlides(slides.map((s) => (s.id === editingSlide.id ? { ...s, ...formData } : s)));
-    } else {
-      const newSlide = { id: Date.now(), ...formData };
-      setSlides([...slides, newSlide]);
+    const token = localStorage.getItem('token');
+    const form = new FormData();
+    form.append('headline', formData.headline);
+    form.append('subtext', formData.subtext);
+    form.append('btnText', formData.btnText);
+    form.append('btnLink', formData.btnLink);
+    form.append('order', formData.order);
+    form.append('status', formData.status);
+    
+    if (formData.imageFile) {
+      form.append('image', formData.imageFile);
+    } else if (formData.image) {
+      form.append('image', formData.image);
     }
-    setIsModalOpen(false);
+
+    if (formData.bgImageFile) {
+      form.append('bgImage', formData.bgImageFile);
+    } else if (formData.bgImage) {
+      form.append('bgImage', formData.bgImage);
+    }
+
+    try {
+      if (editingSlide) {
+        const res = await fetchAPI(`/admin/slides/${editingSlide.id}`, {
+          method: 'PUT',
+          headers: { Authorization: `Bearer ${token}` },
+          body: form,
+        });
+        setSlides(slides.map((s) => (s.id === editingSlide.id ? res : s)));
+      } else {
+        const res = await fetchAPI('/admin/slides', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: form,
+        });
+        setSlides([...slides, res]);
+      }
+      setIsModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save slide');
+    }
   };
 
   return (
@@ -82,7 +117,7 @@ export default function AdminSliderPage() {
         <div className="flex items-center justify-between pb-6 border-b border-slate-200 mb-8">
           <div>
             <h1 className="text-2xl font-black text-slate-900">Manage Hero Slider</h1>
-            <p className="text-xs text-slate-500 mt-1">Configure homepage 2-column split slides (image + headline + CTA)</p>
+            <p className="text-xs text-slate-500 mt-1">Configure homepage 2-column split slides (card image + bg image + headline + CTA)</p>
           </div>
           <button
             onClick={handleOpenAdd}
@@ -98,7 +133,8 @@ export default function AdminSliderPage() {
           <table className="w-full text-left text-sm text-slate-600">
             <thead className="bg-slate-100 text-xs uppercase text-slate-500 font-bold border-b border-slate-200">
               <tr>
-                <th className="px-6 py-4">Thumbnail</th>
+                <th className="px-6 py-4">Card Image</th>
+                <th className="px-6 py-4">Background Image</th>
                 <th className="px-6 py-4">Headline & Subtext</th>
                 <th className="px-6 py-4">Button Link</th>
                 <th className="px-6 py-4">Order</th>
@@ -111,7 +147,12 @@ export default function AdminSliderPage() {
                 <tr key={slide.id} className="hover:bg-slate-100/40">
                   <td className="px-6 py-4">
                     <div className="w-16 h-12 rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
-                      <img src={slide.image} alt="Thumbnail" className="w-full h-full object-cover" />
+                      <img src={slide.image} alt="Card Thumbnail" className="w-full h-full object-cover" />
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="w-24 h-12 rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
+                      <img src={slide.bgImage || slide.image} alt="BG Thumbnail" className="w-full h-full object-cover" />
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -200,14 +241,31 @@ export default function AdminSliderPage() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Image URL / File Path</label>
-              <input
-                type="text"
-                value={formData.image}
-                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                className="w-full bg-slate-100 border border-slate-200 text-slate-900 rounded-xl px-4 py-2.5 text-sm outline-none"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Front Card Image (File)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setFormData({ ...formData, imageFile: e.target.files[0] })}
+                  className="w-full bg-slate-100 border border-slate-200 text-slate-900 rounded-xl px-4 py-2 text-sm outline-none"
+                />
+                {!formData.imageFile && formData.image && (
+                  <p className="text-[10px] text-slate-500 mt-1 truncate">Current: {formData.image}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Background Image (File)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setFormData({ ...formData, bgImageFile: e.target.files[0] })}
+                  className="w-full bg-slate-100 border border-slate-200 text-slate-900 rounded-xl px-4 py-2 text-sm outline-none"
+                />
+                {!formData.bgImageFile && formData.bgImage && (
+                  <p className="text-[10px] text-slate-500 mt-1 truncate">Current: {formData.bgImage}</p>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

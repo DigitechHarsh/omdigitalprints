@@ -45,6 +45,7 @@ model ProjectImage {
 model Slide {
   id       Int     @id @default(autoincrement())
   image    String
+  bgImage  String?
   headline String
   subtext  String?
   btnText  String?

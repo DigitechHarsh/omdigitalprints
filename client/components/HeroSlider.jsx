@@ -9,36 +9,9 @@ export default function HeroSlider({ slides = [] }) {
   const [isPaused, setIsPaused] = useState(false);
   const touchStartX = useRef(0);
 
-  // We add 'bgImage' for the new full-width background feature requested.
-  const activeSlides = slides && slides.length > 0 && slides[0].bgImage ? slides : [
-    {
-      id: 1,
-      image: 'https://images.unsplash.com/photo-1562654501-a0ccc0fc3fb1?auto=format&fit=crop&w=1200&q=80', // Card image
-      bgImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=2000&q=80', // Service background
-      headline: 'High-Quality Flex Banners for Every Occasion',
-      subtext: 'Get ultra-vibrant, weather-durable banner printing tailored for outdoor campaigns, corporate events & exhibitions with 24-hour delivery.',
-      btnText: 'Explore Flex Printing',
-      btnLink: '/services/banner-flex-printing'
-    },
-    {
-      id: 2,
-      image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80',
-      bgImage: 'https://images.unsplash.com/photo-1596522354195-e84ae3c98731?auto=format&fit=crop&w=2000&q=80',
-      headline: 'Illuminate Your Brand with Custom LED Boards',
-      subtext: 'Command attention day & night with energy-efficient 3D backlit LED glow signboards built for modern retail storefronts.',
-      btnText: 'View LED Signage',
-      btnLink: '/services/led-board-creation'
-    },
-    {
-      id: 3,
-      image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80',
-      bgImage: 'https://images.unsplash.com/photo-1596496050827-8299e0220de1?auto=format&fit=crop&w=2000&q=80',
-      headline: 'Premium 3D Acrylic & Laser Cut Signage',
-      subtext: 'Elevate your office reception and storefront frontage with high-precision laser-machined 3D acrylic lettering.',
-      btnText: 'Discover Acrylic Signs',
-      btnLink: '/services/acrylic-letter-signage'
-    }
-  ];
+  // If slides array is empty, we provide a fallback inside the component or just use fallbackSlides if imported.
+  // We'll use the 'slides' prop if it has items.
+  const activeSlides = slides && slides.length > 0 ? slides : [];
 
   // Auto-play interval
   useEffect(() => {
@@ -60,6 +33,8 @@ export default function HeroSlider({ slides = [] }) {
   };
 
   const currentSlide = activeSlides[currentIndex];
+
+  if (!currentSlide) return null;
 
   return (
     <section

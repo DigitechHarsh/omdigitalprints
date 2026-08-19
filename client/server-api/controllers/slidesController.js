@@ -22,8 +22,13 @@ const createSlide = async (req, res) => {
   try {
     const { headline, subtext, btnText, btnLink, order, status } = req.body;
     let image = req.body.image;
-    if (req.file) {
-      image = `/uploads/${req.file.filename}`;
+    let bgImage = req.body.bgImage;
+
+    if (req.files && req.files.image) {
+      image = req.files.image[0].path; // Cloudinary URL
+    }
+    if (req.files && req.files.bgImage) {
+      bgImage = req.files.bgImage[0].path; // Cloudinary URL
     }
 
     if (!headline) {
@@ -33,6 +38,7 @@ const createSlide = async (req, res) => {
     const newSlide = await prisma.slide.create({
       data: {
         image: image || '/assets/slide-default.png',
+        bgImage: bgImage || null,
         headline,
         subtext,
         btnText: btnText || 'Explore Services',
@@ -62,10 +68,16 @@ const updateSlide = async (req, res) => {
     if (order !== undefined) data.order = parseInt(order);
     if (status !== undefined) data.status = status === 'true' || status === true;
 
-    if (req.file) {
-      data.image = `/uploads/${req.file.filename}`;
+    if (req.files && req.files.image) {
+      data.image = req.files.image[0].path;
     } else if (req.body.image) {
       data.image = req.body.image;
+    }
+
+    if (req.files && req.files.bgImage) {
+      data.bgImage = req.files.bgImage[0].path;
+    } else if (req.body.bgImage !== undefined) {
+      data.bgImage = req.body.bgImage;
     }
 
     const updated = await prisma.slide.update({

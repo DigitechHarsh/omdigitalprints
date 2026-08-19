@@ -49,8 +49,8 @@ router.put(
 );
 router.delete('/admin/projects/:id', authenticateToken, projects.deleteProject);
 
-router.post('/admin/slides', authenticateToken, upload.single('image'), slides.createSlide);
-router.put('/admin/slides/:id', authenticateToken, upload.single('image'), slides.updateSlide);
+router.post('/admin/slides', authenticateToken, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'bgImage', maxCount: 1 }]), slides.createSlide);
+router.put('/admin/slides/:id', authenticateToken, upload.fields([{ name: 'image', maxCount: 1 }, { name: 'bgImage', maxCount: 1 }]), slides.updateSlide);
 router.delete('/admin/slides/:id', authenticateToken, slides.deleteSlide);
 
 router.get('/admin/leads', authenticateToken, leads.getLeads);
