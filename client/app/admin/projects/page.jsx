@@ -52,24 +52,60 @@ export default function AdminProjectsPage() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (confirm('Are you sure you want to delete this project?')) {
-      setProjects(projects.filter((p) => p.id !== id));
-      fetchAPI(`/admin/projects/${id}`, { method: 'DELETE' }).catch(() => {});
+      const token = localStorage.getItem('token');
+      try {
+        await fetchAPI(`/admin/projects/${id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setProjects(projects.filter((p) => p.id !== id));
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const selectedService = services.find((s) => String(s.id) === String(formData.serviceId)) || services[0];
+    const token = localStorage.getItem('token');
     
-    if (editingProject) {
-      setProjects(projects.map((p) => (p.id === editingProject.id ? { ...p, ...formData, service: selectedService } : p)));
-    } else {
-      const newProj = { id: Date.now(), ...formData, service: selectedService };
-      setProjects([...projects, newProj]);
+    const payload = new FormData();
+    payload.append('title', formData.title);
+    payload.append('serviceId', formData.serviceId);
+    payload.append('description', formData.description);
+    payload.append('status', formData.status);
+    
+    // Check for the file input
+    const fileInput = document.getElementById('mainImageFile');
+    if (fileInput && fileInput.files[0]) {
+      payload.append('mainImage', fileInput.files[0]);
     }
-    setIsModalOpen(false);
+
+    try {
+      if (editingProject) {
+        const updated = await fetchAPI(`/admin/projects/${editingProject.id}`, {
+          method: 'PUT',
+          headers: { Authorization: `Bearer ${token}` },
+          body: payload
+        });
+        const selectedService = services.find((s) => String(s.id) === String(formData.serviceId)) || services[0];
+        setProjects(projects.map((p) => (p.id === editingProject.id ? { ...updated, service: selectedService } : p)));
+      } else {
+        const created = await fetchAPI(`/admin/projects`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: payload
+        });
+        const selectedService = services.find((s) => String(s.id) === String(formData.serviceId)) || services[0];
+        setProjects([...projects, { ...created, service: selectedService }]);
+      }
+      setIsModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save project: ' + err.message);
+    }
   };
 
   return (
@@ -108,8 +144,12 @@ export default function AdminProjectsPage() {
               {projects.map((project) => (
                 <tr key={project.id} className="hover:bg-slate-100/40">
                   <td className="px-6 py-4">
-                    <div className="w-16 h-12 rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
-                      <img src={project.mainImage} alt={project.title} className="w-full h-full object-cover" />
+                    <div className="w-16 h-12 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 text-xs">
+                      {project.mainImage ? (
+                        <img src={project.mainImage} alt={project.title} className="w-full h-full object-cover" />
+                      ) : (
+                        'No IMG'
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-4 font-bold text-slate-900 max-w-xs truncate">{project.title}</td>
@@ -182,13 +222,18 @@ export default function AdminProjectsPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Main Cover Photo URL</label>
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Main Cover Photo</label>
               <input
-                type="text"
-                value={formData.mainImage}
-                onChange={(e) => setFormData({ ...formData, mainImage: e.target.value })}
-                className="w-full bg-slate-100 border border-slate-200 text-slate-900 rounded-xl px-4 py-2.5 text-sm outline-none"
+                type="file"
+                id="mainImageFile"
+                accept="image/*"
+                className="w-full bg-slate-100 border border-slate-200 text-slate-500 rounded-xl px-4 py-2 text-sm outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-600 hover:file:bg-brand-100"
               />
+              {editingProject && editingProject.mainImage && (
+                <div className="mt-2 text-xs text-slate-500">
+                  Current image: <a href={editingProject.mainImage} target="_blank" className="text-brand-500 underline">View</a>. Uploading a new file will replace it.
+                </div>
+              )}
             </div>
 
             <div>

@@ -1,6 +1,6 @@
 const { createServer } = require('http');
-const { parse } = require('url');
 const next = require('next');
+const backendApp = require('./server-api/index.js'); // Import Express API app
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = '0.0.0.0';
@@ -9,16 +9,12 @@ const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
-  createServer(async (req, res) => {
-    try {
-      const parsedUrl = parse(req.url, true);
-      await handle(req, res, parsedUrl);
-    } catch (err) {
-      console.error('Error occurred handling', req.url, err);
-      res.statusCode = 500;
-      res.end('internal server error');
-    }
-  }).listen(port, () => {
-    console.log(`> Ready on http://${hostname}:${port}`);
+  // Pass all unhandled requests to Next.js
+  backendApp.all('*', (req, res) => {
+    return handle(req, res);
+  });
+
+  createServer(backendApp).listen(port, () => {
+    console.log(`> Unified Server Ready on http://${hostname}:${port}`);
   });
 });

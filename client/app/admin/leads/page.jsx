@@ -13,7 +13,8 @@ export default function AdminLeadsPage() {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    fetchAPI('/admin/leads')
+    const token = localStorage.getItem('token');
+    fetchAPI('/admin/leads', { headers: { Authorization: `Bearer ${token}` } })
       .then((data) => {
         if (data && data.length > 0) setLeads(data);
       })
@@ -21,17 +22,23 @@ export default function AdminLeadsPage() {
   }, []);
 
   const handleStatusChange = (id, newStatus) => {
+    const token = localStorage.getItem('token');
     setLeads(leads.map((l) => (l.id === id ? { ...l, status: newStatus } : l)));
     fetchAPI(`/admin/leads/${id}`, {
       method: 'PUT',
+      headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify({ status: newStatus }),
     }).catch(() => {});
   };
 
   const handleDelete = (id) => {
     if (confirm('Delete lead record permanently?')) {
+      const token = localStorage.getItem('token');
       setLeads(leads.filter((l) => l.id !== id));
-      fetchAPI(`/admin/leads/${id}`, { method: 'DELETE' }).catch(() => {});
+      fetchAPI(`/admin/leads/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      }).catch(() => {});
     }
   };
 

@@ -9,7 +9,9 @@ import {
   FolderKanban,
   Users,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  Search,
+  Settings
 } from 'lucide-react';
 
 export default function AdminSidebar() {
@@ -22,6 +24,8 @@ export default function AdminSidebar() {
     { name: 'Manage Service', href: '/admin/services', icon: Layers },
     { name: 'Manage Projects', href: '/admin/projects', icon: FolderKanban },
     { name: 'Contact Leads', href: '/admin/leads', icon: Users },
+    { name: 'Manage SEO', href: '/admin/seo', icon: Search },
+    { name: 'Settings', href: '/admin/settings', icon: Settings },
   ];
 
   const handleLogout = async () => {

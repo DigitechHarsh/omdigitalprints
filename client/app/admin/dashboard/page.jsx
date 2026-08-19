@@ -20,7 +20,8 @@ export default function AdminDashboardPage() {
   });
 
   useEffect(() => {
-    fetchAPI('/admin/dashboard/stats')
+    const token = localStorage.getItem('token');
+    fetchAPI('/admin/dashboard/stats', { headers: { Authorization: `Bearer ${token}` } })
       .then((data) => setStats(data))
       .catch(() => console.log('Using default client dashboard metrics'));
   }, []);

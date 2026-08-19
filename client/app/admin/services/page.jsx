@@ -33,7 +33,6 @@ export default function AdminServicesPage() {
       slug: '',
       shortDesc: '',
       fullDesc: '',
-      icon: 'https://images.unsplash.com/photo-1562654501-a0ccc0fc3fb1?auto=format&fit=crop&w=800&q=80',
       status: true,
     });
     setIsModalOpen(true);
@@ -46,16 +45,23 @@ export default function AdminServicesPage() {
       slug: service.slug,
       shortDesc: service.shortDesc || '',
       fullDesc: service.fullDesc || '',
-      icon: service.icon || '',
       status: service.status ?? true,
     });
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (confirm('Are you sure you want to delete this service?')) {
-      setServices(services.filter((s) => s.id !== id));
-      fetchAPI(`/admin/services/${id}`, { method: 'DELETE' }).catch(() => {});
+      const token = localStorage.getItem('token');
+      try {
+        await fetchAPI(`/admin/services/${id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setServices(services.filter((s) => s.id !== id));
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
@@ -64,15 +70,44 @@ export default function AdminServicesPage() {
     setFormData({ ...formData, name, slug });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editingService) {
-      setServices(services.map((s) => (s.id === editingService.id ? { ...s, ...formData } : s)));
-    } else {
-      const newService = { id: Date.now(), ...formData };
-      setServices([...services, newService]);
+    const token = localStorage.getItem('token');
+    
+    const payload = new FormData();
+    payload.append('name', formData.name);
+    payload.append('slug', formData.slug);
+    payload.append('shortDesc', formData.shortDesc);
+    payload.append('fullDesc', formData.fullDesc);
+    payload.append('status', formData.status);
+    
+    // Check for the file input
+    const fileInput = document.getElementById('iconFile');
+    if (fileInput && fileInput.files[0]) {
+      payload.append('icon', fileInput.files[0]);
     }
-    setIsModalOpen(false);
+
+    try {
+      if (editingService) {
+        const updated = await fetchAPI(`/admin/services/${editingService.id}`, {
+          method: 'PUT',
+          headers: { Authorization: `Bearer ${token}` },
+          body: payload
+        });
+        setServices(services.map((s) => (s.id === editingService.id ? updated : s)));
+      } else {
+        const created = await fetchAPI(`/admin/services`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: payload
+        });
+        setServices([...services, created]);
+      }
+      setIsModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save service: ' + err.message);
+    }
   };
 
   return (
@@ -112,8 +147,12 @@ export default function AdminServicesPage() {
               {services.map((service) => (
                 <tr key={service.id || service.slug} className="hover:bg-slate-100/40">
                   <td className="px-6 py-4">
-                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
-                      <img src={service.icon} alt={service.name} className="w-full h-full object-cover" />
+                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 text-xs">
+                      {service.icon ? (
+                        <img src={service.icon} alt={service.name} className="w-full h-full object-cover" />
+                      ) : (
+                        'No IMG'
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-4 font-bold text-slate-900">{service.name}</td>
@@ -200,13 +239,18 @@ export default function AdminServicesPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Icon / Thumbnail Image URL</label>
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Icon / Thumbnail Image</label>
               <input
-                type="text"
-                value={formData.icon}
-                onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                className="w-full bg-slate-100 border border-slate-200 text-slate-900 rounded-xl px-4 py-2.5 text-sm outline-none"
+                type="file"
+                id="iconFile"
+                accept="image/*"
+                className="w-full bg-slate-100 border border-slate-200 text-slate-500 rounded-xl px-4 py-2 text-sm outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-600 hover:file:bg-brand-100"
               />
+              {editingService && editingService.icon && (
+                <div className="mt-2 text-xs text-slate-500">
+                  Current image: <a href={editingService.icon} target="_blank" className="text-brand-500 underline">View</a>. Uploading a new file will replace it.
+                </div>
+              )}
             </div>
 
             <div>
